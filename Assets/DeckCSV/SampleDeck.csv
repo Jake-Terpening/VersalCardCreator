@@ -1,5 +1,5 @@
 Name,Level,Traits,Effect,Attack,Defense,Subtype,Condition,Type
-Swordmaster,5,Fighter,Deals double damage when attacking,7,3,,,Unit
-Fireball,,,,,,Active,Deals 5 damage,Spell
-Goblin Warrior,1,Quick,None,3,2,,,Unit
-Heal,,,,,,Continuous,Heals 3 damage if unit health is 2 or less,Spell
+Swordmaster,5,Fighter,do sword stuff,7,3,,,Unit
+Fireball,,,,,,Active,Do fire stuff,Spell
+Idiot,1,Bozo,do stupid stuff,3,2,,,Unit
+Heal,,,,,,Continuous,do heal stuff,Spell

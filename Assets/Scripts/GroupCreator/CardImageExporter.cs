@@ -1,8 +1,11 @@
 using System.IO;
 using UnityEngine;
 using TMPro;
-using UnityEditor;
 using UnityEngine.UI;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class CardImageExporter : MonoBehaviour
 {
@@ -50,7 +53,9 @@ public class CardImageExporter : MonoBehaviour
     private const string spellCardImageString = "ImageBack/CardImage";
 
     #endregion
-    void CreateCard()
+
+#if UNITY_EDITOR
+    public void CreateCard()
     {
         GameObject canvasObject = new GameObject("CardCanvas");
         Canvas canvas = canvasObject.AddComponent<Canvas>();
@@ -109,7 +114,21 @@ public class CardImageExporter : MonoBehaviour
         SaveCardPrefab(newCard, cardData);
     }
 
-    // Helper for updating text fields
+    // Save the card prefab
+    void SaveCardPrefab(GameObject newCard, CardData cardData)
+    {
+        string folderPath = $"Assets/Cards/{subFolder}";
+        if (!AssetDatabase.IsValidFolder(folderPath))
+        {
+            AssetDatabase.CreateFolder("Assets/Cards", subFolder);
+        }
+        string fileName = $"{folderPath}/{cardData.name}.prefab";
+        PrefabUtility.SaveAsPrefabAsset(newCard, fileName);
+        Debug.Log($"Card '{cardData.name}' saved as prefab at {fileName}");
+    }
+#endif
+
+    // Helper for updating text fields (works in runtime too)
     void UpdateCardField(GameObject card, string path, string value)
     {
         var textComponent = card.transform.Find(path)?.GetComponent<TextMeshProUGUI>();
@@ -123,7 +142,7 @@ public class CardImageExporter : MonoBehaviour
         }
     }
 
-    // Helper for updating images
+    // Helper for updating images (works in runtime too)
     void UpdateCardImage(GameObject card, string path, Sprite image)
     {
         var imageComponent = card.transform.Find(path)?.GetComponent<Image>();
@@ -136,18 +155,4 @@ public class CardImageExporter : MonoBehaviour
             Debug.LogWarning($"Image component not found at {path}");
         }
     }
-
-    // Save the card prefab
-    void SaveCardPrefab(GameObject newCard, CardData cardData)
-    {
-        string folderPath = $"Assets/Cards/{subFolder}";
-        if (!AssetDatabase.IsValidFolder(folderPath))
-        {
-            AssetDatabase.CreateFolder("Assets/Cards", subFolder);
-        }
-        string fileName = $"{folderPath}/{cardData.name}.prefab";
-        PrefabUtility.SaveAsPrefabAsset(newCard, fileName);
-        Debug.Log($"Card '{cardData.name}' saved as prefab at {fileName}");
-    }
-
 }
