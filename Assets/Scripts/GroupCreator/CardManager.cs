@@ -14,6 +14,7 @@ public class CardData
     public string level;  // Used for units
     public int attack;  // Used for units
     public int defense;  // Used for units
+    public string affinity;
     public int rarity;
 }
 
@@ -46,8 +47,9 @@ public class CardManager : MonoBehaviour
             string name = columns[0].Trim();
             if (string.IsNullOrEmpty(name)) continue;
 
-            string type = columns[9].Trim();       // Last column
-            string rarity = columns[8].Trim();     // Second-to-last column
+            string type = columns[10].Trim();       // Last column
+            string rarity = columns[9].Trim();     // Second-to-last column
+            string affinity = columns[8].Trim();
 
             if (type.Equals("Unit", StringComparison.OrdinalIgnoreCase))
             {

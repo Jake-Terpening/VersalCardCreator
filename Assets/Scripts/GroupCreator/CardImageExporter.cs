@@ -81,8 +81,8 @@ public class CardImageExporter : MonoBehaviour
 
             UpdateCardField(newCard, unitCardNameString, cardName);
             UpdateCardField(newCard, unitCardDescriptionString, cardDescription);
-            UpdateCardField(newCard, unitCardAttackString, cardAttack.ToString());
-            UpdateCardField(newCard, unitCardDefenseString, cardDefense.ToString());
+            UpdateCardField(newCard, unitCardAttackString, $"{cardAttack.ToString()} ATK");
+            UpdateCardField(newCard, unitCardDefenseString, $"{cardDefense.ToString()} DEF");
             UpdateCardField(newCard, unitCardLevelString, cardLevel.ToString());
             UpdateCardField(newCard, unitCardTagsString, cardTags);
             UpdateCardImage(newCard, unitCardImageString, cardImage);
@@ -91,7 +91,8 @@ public class CardImageExporter : MonoBehaviour
         {
             cardData.name = spellName;
             cardData.type = "Spell";
-            cardData.subtype = spellType.ToString();
+            string typeString = spellType.ToString();
+            cardData.subtype = string.IsNullOrEmpty(typeString) ? "?" : typeString[0].ToString();
             cardData.condition = spellCondition;
             cardData.effect = spellDescription;
 

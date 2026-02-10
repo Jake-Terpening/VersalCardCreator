@@ -179,8 +179,8 @@ MonoBehaviour:
   Button_GenerateSheets: {fileID: 1403595420}
   unitCardPrefab: {fileID: 7347430394528789076, guid: d7466324203cee6489092dca8002b8c5, type: 3}
   spellCardPrefab: {fileID: 8604503586676517862, guid: 3a16d93a96fb76f4a968c132753ac1fb, type: 3}
-  width: 250
-  height: 350
+  width: 500
+  height: 700
   rarityColorMap: {fileID: 11400000, guid: e6834ecdb59fc434eab2744fdd1bdd72, type: 2}
 --- !u!1 &15351086
 GameObject:

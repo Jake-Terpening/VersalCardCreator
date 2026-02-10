@@ -20,9 +20,9 @@ public class CardGeneratorUI : MonoBehaviour
 
     [Header("CardSize")]
     [SerializeField]
-    private float width = 250f;
+    private float width = 500f;
     [SerializeField]
-    private float height = 350f;
+    private float height = 700f;
 
     [Header("Rarity Colors")]
     public RarityColorMap rarityColorMap;

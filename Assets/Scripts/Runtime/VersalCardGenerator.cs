@@ -126,8 +126,9 @@ public class VersalCardGenerator
                 defense = int.TryParse(cols[5], out int def) ? def : 0,
                 subtype = cols[6],
                 condition = cols[7],
-                rarity = int.TryParse(cols[8], out int r) ? r : 1, // default rarity 1 if missing
-                type = cols[9]
+                affinity = cols[8],
+                rarity = int.TryParse(cols[9], out int r) ? r : 1, // default rarity 1 if missing
+                type = cols[10]
             };
 
             cardDataList.Add(card);
@@ -138,7 +139,10 @@ public class VersalCardGenerator
 
     private Sprite LoadSprite(string path)
     {
-        if (!File.Exists(path)) return null;
+        if (!File.Exists(path))
+        {
+            return null;
+        }
         byte[] bytes = File.ReadAllBytes(path);
         Texture2D tex = new Texture2D(2, 2);
         tex.LoadImage(bytes);
@@ -185,9 +189,12 @@ public class VersalCardGenerator
         rt.position = Vector3.zero;
 
         // Assign main sprite (if any)
-        UnityEngine.UI.Image img = instance.GetComponentInChildren<UnityEngine.UI.Image>();
+        GameObject imgObject = GameObject.Find("CardImage");
+        UnityEngine.UI.Image img = imgObject.GetComponentInChildren<UnityEngine.UI.Image>();
         if (img != null && sprite != null)
+        {
             img.sprite = sprite;
+        }
     }
 
     private void ApplyRarityColors(GameObject instance, CardData card)
@@ -196,26 +203,24 @@ public class VersalCardGenerator
 
         if (!rarityColorMap.TryGetColors(card.rarity, out RarityColor colors)) return;
 
-        string baseObjectName;
-        // Base background
-        if (card.type.ToLower() == "unit")
+        // Find the rarity border object
+        GameObject borderGO = GameObject.Find("RarityBorder");
+        if (borderGO == null)
         {
-            baseObjectName = "UnitBase";
+            Debug.LogWarning($"RarityBorder not found on prefab instance for card {card.name}");
+            return;
+        }
+
+        if (borderGO.TryGetComponent(out UnityEngine.UI.Image borderImage))
+        {
+            borderImage.color = colors.primary;
         }
         else
         {
-            baseObjectName = "SpellBase";
+            Debug.LogWarning($"RarityBorder has no Image component on card {card.name}");
         }
-
-        Transform baseTransform = instance.transform.Find(baseObjectName);
-        if (baseTransform != null && baseTransform.TryGetComponent(out UnityEngine.UI.Image baseImage))
-            baseImage.color = colors.secondary;
-
-        // Name box background
-        Transform nameBackTransform = instance.transform.Find("NameTextBack");
-        if (nameBackTransform != null && nameBackTransform.TryGetComponent(out UnityEngine.UI.Image nameBackImage))
-            nameBackImage.color = colors.primary;
     }
+
 
     private void AssignTextFields(GameObject instance, CardData card)
     {
@@ -229,28 +234,26 @@ public class VersalCardGenerator
 
             if (lowerName.Contains("name")) fieldText = card.name;
             else if (lowerName.Contains("description") || lowerName.Contains("effect")) fieldText = card.effect;
-            else if (lowerName.Contains("attack")) fieldText = card.attack.ToString();
-            else if (lowerName.Contains("defense")) fieldText = card.defense.ToString();
+            else if (lowerName.Contains("attack")) fieldText = $"{card.attack.ToString()} ATK";
+            else if (lowerName.Contains("defense")) fieldText = $"{card.defense.ToString()} DEF";
             else if (lowerName.Contains("level")) fieldText = card.level;
             else if (lowerName.Contains("condition")) fieldText = card.condition.ToString();
             else if (lowerName.Contains("tags") || lowerName.Contains("traits"))
                 fieldText = string.Join(", ", card.traits.Split(';'));
             else if (lowerName.Contains("spelltype") || lowerName.Contains("subtype"))
-                fieldText = card.subtype;
+            {
+                string typeString = card.subtype;
+                fieldText = string.IsNullOrEmpty(typeString) ? "?" : typeString[0].ToString();
+            }
             else
             {
-                Debug.Log($"Skipping '{t.name}' because it is not one of our set fields");
                 continue;
             }
 
             t.text = fieldText;
 
-            // Log assignment
-            Debug.Log($"Assigning TMP '{t.name}' => '{fieldText}'");
-
             if (t.GetComponent<DoNotSquish>() != null)
             {
-                Debug.Log($"Skipping '{t.name}' because it has DoNotSquish component.");
                 continue;
             }
             // Squish width but preserve height
