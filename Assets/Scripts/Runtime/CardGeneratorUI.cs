@@ -14,6 +14,19 @@ public class CardGeneratorUI : MonoBehaviour
     public Button Button_GenerateCards;
     public Button Button_GenerateSheets;
 
+    [Header("Prefabs")]
+    [SerializeField] private GameObject unitCardPrefab;
+    [SerializeField] private GameObject spellCardPrefab;
+
+    [Header("CardSize")]
+    [SerializeField]
+    private float width = 250f;
+    [SerializeField]
+    private float height = 350f;
+
+    [Header("Rarity Colors")]
+    public RarityColorMap rarityColorMap;
+
     // Reference to your existing generator script
     public VersalCardGenerator generator;
 
@@ -24,6 +37,10 @@ public class CardGeneratorUI : MonoBehaviour
 
         if (Button_GenerateSheets != null)
             Button_GenerateSheets.onClick.AddListener(OnGenerateSheetsClicked);
+
+        generator = new VersalCardGenerator(unitCardPrefab, spellCardPrefab, new Vector2(width, height));
+        generator.SetRarityColorMap(rarityColorMap);
+
     }
 
     private void OnGenerateCardsClicked()
@@ -74,4 +91,26 @@ public class CardGeneratorUI : MonoBehaviour
 
         return true;
     }
+
+    public void OnPickCSVClicked()
+    {
+        string[] paths = SFB.StandaloneFileBrowser.OpenFilePanel("Select CSV File", "", "csv", false);
+        if (paths.Length > 0)
+            InputField_CSV.text = paths[0];
+    }
+
+    public void OnPickImageFolderClicked()
+    {
+        string[] paths = SFB.StandaloneFileBrowser.OpenFolderPanel("Select Image Folder", "", false);
+        if (paths.Length > 0)
+            InputField_ImageFolder.text = paths[0];
+    }
+
+    public void OnPickOutputFolderClicked()
+    {
+        string[] paths = SFB.StandaloneFileBrowser.OpenFolderPanel("Select Output Folder", "", false);
+        if (paths.Length > 0)
+            InputField_OutputFolder.text = paths[0];
+    }
+
 }

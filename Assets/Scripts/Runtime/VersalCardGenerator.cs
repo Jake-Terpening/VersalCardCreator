@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.IO;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
 
 public class VersalCardGenerator
 {
@@ -9,6 +11,14 @@ public class VersalCardGenerator
 
     private GameObject unitCardPrefab;
     private GameObject spellCardPrefab;
+
+    private RarityColorMap rarityColorMap;
+
+    public void SetRarityColorMap(RarityColorMap map)
+    {
+        rarityColorMap = map;
+    }
+
 
     public VersalCardGenerator(GameObject unitPrefab, GameObject spellPrefab, Vector2 cardSize)
     {
@@ -95,27 +105,36 @@ public class VersalCardGenerator
         cardDataList.Clear();
         string[] rows = File.ReadAllLines(csvPath);
 
-        for (int i = 1; i < rows.Length; i++)
+        for (int i = 1; i < rows.Length; i++) // skip header row
         {
-            string[] cols = rows[i].Split(',');
-            if (cols.Length < 9) continue;
+            List<string> cols = new List<string>();
+            foreach (Match m in Regex.Matches(rows[i], @"(?:^|,)(?:""(?<val>[^""]*)""|(?<val>[^,]*))"))
+            {
+                cols.Add(m.Groups["val"].Value.Trim());
+            }
+
+            // Ensure we have at least 10 columns (Name, Level, Traits, Effect, Attack, Defense, Subtype, Condition, Rarity, Type)
+            if (cols.Count < 10) continue;
 
             CardData card = new CardData
             {
-                name = cols[0].Trim(),
-                level = cols[1].Trim(),
-                traits = cols[2].Trim(),
-                effect = cols[3].Trim(),
+                name = cols[0],
+                level = cols[1],
+                traits = cols[2].Replace(" ", ";"), // optional: convert spaces to semicolons
+                effect = cols[3],
                 attack = int.TryParse(cols[4], out int atk) ? atk : 0,
                 defense = int.TryParse(cols[5], out int def) ? def : 0,
-                subtype = cols[6].Trim(),
-                condition = cols[7].Trim(),
-                type = cols[8].Trim()
+                subtype = cols[6],
+                condition = cols[7],
+                rarity = int.TryParse(cols[8], out int r) ? r : 1, // default rarity 1 if missing
+                type = cols[9]
             };
 
             cardDataList.Add(card);
         }
     }
+
+
 
     private Sprite LoadSprite(string path)
     {
@@ -128,18 +147,83 @@ public class VersalCardGenerator
 
     private Texture2D RenderCardTexture(GameObject prefab, CardData card, Sprite sprite)
     {
+        // Instantiate prefab
         GameObject instance = UnityEngine.Object.Instantiate(prefab);
-        RectTransform rt = instance.GetComponent<RectTransform>();
-        if (rt != null) rt.sizeDelta = cardSize;
 
-        // Image assignment
+        // Step 1: Setup Prefab
+        SetupPrefab(instance, cardSize, sprite);
+
+        // Step 2: Apply rarity colors
+        ApplyRarityColors(instance, card);
+
+        // Step 3: Assign text fields (with squish logic)
+        AssignTextFields(instance, card);
+
+        // Step 4: Setup temporary camera
+        Camera cam = SetupCamera(cardSize);
+
+        // Step 5: Render to texture
+        Texture2D tex = RenderToTexture(cam, cardSize);
+
+        // Step 6: Cleanup objects
+        Cleanup(cam, instance);
+
+        return tex;
+    }
+
+    private void SetupPrefab(GameObject instance, Vector2 cardSize, Sprite sprite)
+    {
+        // Ensure canvas exists
+        Canvas canvas = instance.GetComponent<Canvas>() ?? instance.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+
+        // RectTransform setup
+        RectTransform rt = instance.GetComponent<RectTransform>() ?? instance.AddComponent<RectTransform>();
+        rt.sizeDelta = cardSize;
+        rt.pivot = new Vector2(0, 0);
+        rt.localScale = Vector3.one;
+        rt.position = Vector3.zero;
+
+        // Assign main sprite (if any)
         UnityEngine.UI.Image img = instance.GetComponentInChildren<UnityEngine.UI.Image>();
-        if (img != null && sprite != null) img.sprite = sprite;
+        if (img != null && sprite != null)
+            img.sprite = sprite;
+    }
 
-        // Text assignment
+    private void ApplyRarityColors(GameObject instance, CardData card)
+    {
+        if (rarityColorMap == null) return;
+
+        if (!rarityColorMap.TryGetColors(card.rarity, out RarityColor colors)) return;
+
+        string baseObjectName;
+        // Base background
+        if (card.type.ToLower() == "unit")
+        {
+            baseObjectName = "UnitBase";
+        }
+        else
+        {
+            baseObjectName = "SpellBase";
+        }
+
+        Transform baseTransform = instance.transform.Find(baseObjectName);
+        if (baseTransform != null && baseTransform.TryGetComponent(out UnityEngine.UI.Image baseImage))
+            baseImage.color = colors.secondary;
+
+        // Name box background
+        Transform nameBackTransform = instance.transform.Find("NameTextBack");
+        if (nameBackTransform != null && nameBackTransform.TryGetComponent(out UnityEngine.UI.Image nameBackImage))
+            nameBackImage.color = colors.primary;
+    }
+
+    private void AssignTextFields(GameObject instance, CardData card)
+    {
         TMPro.TextMeshProUGUI[] texts = instance.GetComponentsInChildren<TMPro.TextMeshProUGUI>();
         foreach (var t in texts)
         {
+            
+
             string lowerName = t.name.ToLower();
             string fieldText = "";
 
@@ -148,28 +232,48 @@ public class VersalCardGenerator
             else if (lowerName.Contains("attack")) fieldText = card.attack.ToString();
             else if (lowerName.Contains("defense")) fieldText = card.defense.ToString();
             else if (lowerName.Contains("level")) fieldText = card.level;
+            else if (lowerName.Contains("condition")) fieldText = card.condition.ToString();
             else if (lowerName.Contains("tags") || lowerName.Contains("traits"))
                 fieldText = string.Join(", ", card.traits.Split(';'));
+            else if (lowerName.Contains("spelltype") || lowerName.Contains("subtype"))
+                fieldText = card.subtype;
+            else
+            {
+                Debug.Log($"Skipping '{t.name}' because it is not one of our set fields");
+                continue;
+            }
 
             t.text = fieldText;
 
-            t.enableAutoSizing = false;
-            t.enableWordWrapping = false;
+            // Log assignment
+            Debug.Log($"Assigning TMP '{t.name}' => '{fieldText}'");
 
+            if (t.GetComponent<DoNotSquish>() != null)
+            {
+                Debug.Log($"Skipping '{t.name}' because it has DoNotSquish component.");
+                continue;
+            }
+            // Squish width but preserve height
             float preferredWidth = t.preferredWidth;
             float maxWidth = t.rectTransform.rect.width;
-
             t.rectTransform.localScale = (preferredWidth > maxWidth) ? new Vector3(maxWidth / preferredWidth, 1f, 1f) : Vector3.one;
         }
+    }
 
-        // Camera setup
+
+    private Camera SetupCamera(Vector2 cardSize)
+    {
         Camera cam = new GameObject("TempCam").AddComponent<Camera>();
         cam.orthographic = true;
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = Color.clear;
         cam.orthographicSize = cardSize.y / 2f;
-        cam.transform.position = new Vector3(cardSize.x / 2f, cardSize.y / 2f, -10);
+        cam.transform.position = new Vector3(cardSize.x / 2f, cardSize.y / 2f, -10f);
+        return cam;
+    }
 
+    private Texture2D RenderToTexture(Camera cam, Vector2 cardSize)
+    {
         RenderTexture rtTex = new RenderTexture((int)cardSize.x, (int)cardSize.y, 24);
         cam.targetTexture = rtTex;
         cam.Render();
@@ -181,12 +285,18 @@ public class VersalCardGenerator
 
         RenderTexture.active = null;
         cam.targetTexture = null;
-        UnityEngine.Object.DestroyImmediate(cam.gameObject);
-        UnityEngine.Object.DestroyImmediate(rtTex);
-        UnityEngine.Object.DestroyImmediate(instance);
 
+        UnityEngine.Object.DestroyImmediate(rtTex);
         return tex;
     }
+
+    private void Cleanup(Camera cam, GameObject instance)
+    {
+        UnityEngine.Object.DestroyImmediate(cam.gameObject);
+        UnityEngine.Object.DestroyImmediate(instance);
+    }
+
+
 
     private void RenderCardToPNG(GameObject prefab, CardData card, Sprite sprite, string path)
     {

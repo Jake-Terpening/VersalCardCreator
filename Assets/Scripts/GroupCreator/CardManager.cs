@@ -14,6 +14,7 @@ public class CardData
     public string level;  // Used for units
     public int attack;  // Used for units
     public int defense;  // Used for units
+    public int rarity;
 }
 
 public class CardManager : MonoBehaviour
@@ -32,34 +33,41 @@ public class CardManager : MonoBehaviour
     {
         string[] rows = cardCSV.text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
-        for (int i = 1; i < rows.Length; i++) // Skip the header row
+        for (int i = 1; i < rows.Length; i++) // Skip header row
         {
             string[] columns = rows[i].Split(',');
 
-            string name = columns[0].Trim();
-            if (string.IsNullOrEmpty(name)) continue; // Skip invalid rows
+            if (columns.Length < 10)
+            {
+                Debug.LogWarning($"Row {i + 1} does not have enough columns: {rows[i]}");
+                continue;
+            }
 
-            string type = columns[8].Trim(); // Last column for Type
+            string name = columns[0].Trim();
+            if (string.IsNullOrEmpty(name)) continue;
+
+            string type = columns[9].Trim();       // Last column
+            string rarity = columns[8].Trim();     // Second-to-last column
 
             if (type.Equals("Unit", StringComparison.OrdinalIgnoreCase))
             {
-                // Parse Unit
+                // Unit-specific fields
                 string level = columns[1].Trim();
                 string traits = columns[2].Trim();
                 string effect = columns[3].Trim();
                 string attack = columns[4].Trim();
                 string defense = columns[5].Trim();
 
-                Debug.Log($"Unit - Name: {name}, Level: {level}, Traits: {traits}, Effect: {effect}, Attack: {attack}, Defense: {defense}");
+                Debug.Log($"Unit - Name: {name}, Level: {level}, Traits: {traits}, Effect: {effect}, Attack: {attack}, Defense: {defense}, Rarity: {rarity}");
             }
             else if (type.Equals("Spell", StringComparison.OrdinalIgnoreCase))
             {
-                // Parse Spell
+                // Spell-specific fields
                 string subtype = columns[6].Trim();
                 string condition = columns[7].Trim();
-                string effect = columns[3].Trim(); // Shared Effect column
+                string effect = columns[3].Trim();
 
-                Debug.Log($"Spell - Name: {name}, Subtype: {subtype}, Condition: {condition}, Effect: {effect}");
+                Debug.Log($"Spell - Name: {name}, Subtype: {subtype}, Condition: {condition}, Effect: {effect}, Rarity: {rarity}");
             }
             else
             {
@@ -67,5 +75,6 @@ public class CardManager : MonoBehaviour
             }
         }
     }
+
 
 }
