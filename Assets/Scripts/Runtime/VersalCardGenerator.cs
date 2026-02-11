@@ -234,7 +234,7 @@ public class VersalCardGenerator
 
             if (lowerName.Contains("name")) fieldText = card.name;
             else if (lowerName.Contains("description") || lowerName.Contains("effect")) fieldText = card.effect;
-            else if (lowerName.Contains("attack")) fieldText = $"{card.attack.ToString()} ATK";
+            else if (lowerName.Contains("attack")) fieldText = $"{card.attack.ToString()} ATT";
             else if (lowerName.Contains("defense")) fieldText = $"{card.defense.ToString()} DEF";
             else if (lowerName.Contains("level")) fieldText = card.level;
             else if (lowerName.Contains("condition")) fieldText = card.condition.ToString();
