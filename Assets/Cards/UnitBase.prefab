@@ -1390,7 +1390,7 @@ GameObject:
   - component: {fileID: 5721398874146840227}
   - component: {fileID: 969554680632018644}
   m_Layer: 5
-  m_Name: Image
+  m_Name: AffinitySymbol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

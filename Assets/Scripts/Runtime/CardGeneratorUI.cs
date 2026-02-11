@@ -24,8 +24,9 @@ public class CardGeneratorUI : MonoBehaviour
     [SerializeField]
     private float height = 700f;
 
-    [Header("Rarity Colors")]
+    [Header("Map Singletons")]
     public RarityColorMap rarityColorMap;
+    public AffinityMap affinityMap;
 
     // Reference to your existing generator script
     public VersalCardGenerator generator;
@@ -39,7 +40,7 @@ public class CardGeneratorUI : MonoBehaviour
             Button_GenerateSheets.onClick.AddListener(OnGenerateSheetsClicked);
 
         generator = new VersalCardGenerator(unitCardPrefab, spellCardPrefab, new Vector2(width, height));
-        generator.SetRarityColorMap(rarityColorMap);
+        generator.SetMaps(rarityColorMap,affinityMap);
 
     }
 

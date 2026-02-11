@@ -182,6 +182,7 @@ MonoBehaviour:
   width: 500
   height: 700
   rarityColorMap: {fileID: 11400000, guid: e6834ecdb59fc434eab2744fdd1bdd72, type: 2}
+  affinityMap: {fileID: 11400000, guid: 856a044d48e6b67408c7e961dba86593, type: 2}
 --- !u!1 &15351086
 GameObject:
   m_ObjectHideFlags: 0

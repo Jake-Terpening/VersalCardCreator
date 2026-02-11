@@ -13,10 +13,12 @@ public class VersalCardGenerator
     private GameObject spellCardPrefab;
 
     private RarityColorMap rarityColorMap;
+    private AffinityMap affinityMap;
 
-    public void SetRarityColorMap(RarityColorMap map)
+    public void SetMaps(RarityColorMap rcMap, AffinityMap aMap)
     {
-        rarityColorMap = map;
+        rarityColorMap = rcMap;
+        affinityMap = aMap;
     }
 
 
@@ -158,18 +160,21 @@ public class VersalCardGenerator
         SetupPrefab(instance, cardSize, sprite);
 
         // Step 2: Apply rarity colors
-        ApplyRarityColors(instance, card);
+        ApplyRarityColors(card);
 
-        // Step 3: Assign text fields (with squish logic)
+        // Step 3: Apply rarity colors
+        ApplyAffinty(card);
+
+        // Step 4: Assign text fields (with squish logic)
         AssignTextFields(instance, card);
 
-        // Step 4: Setup temporary camera
+        // Step 5: Setup temporary camera
         Camera cam = SetupCamera(cardSize);
 
-        // Step 5: Render to texture
+        // Step 6: Render to texture
         Texture2D tex = RenderToTexture(cam, cardSize);
 
-        // Step 6: Cleanup objects
+        // Step 7: Cleanup objects
         Cleanup(cam, instance);
 
         return tex;
@@ -197,7 +202,7 @@ public class VersalCardGenerator
         }
     }
 
-    private void ApplyRarityColors(GameObject instance, CardData card)
+    private void ApplyRarityColors(CardData card)
     {
         if (rarityColorMap == null) return;
 
@@ -218,6 +223,47 @@ public class VersalCardGenerator
         else
         {
             Debug.LogWarning($"RarityBorder has no Image component on card {card.name}");
+        }
+    }
+
+    private void ApplyAffinty(CardData card)
+    {
+        if (affinityMap == null) return;
+
+        AffinityData data = affinityMap.GetAffinity(card.affinity);
+
+        // Find the affinity background object
+        GameObject affinityBack = GameObject.Find("AffinityBack");
+        if (affinityBack == null)
+        {
+            Debug.LogWarning($"AffinityBack not found on prefab instance for card {card.name}");
+            return;
+        }
+
+        if (affinityBack.TryGetComponent(out UnityEngine.UI.Image affinityBackImage))
+        {
+            affinityBackImage.color = data.backdropColor;
+        }
+        else
+        {
+            Debug.LogWarning($"AffinityBack has no Image component on card {card.name}");
+        }
+
+        // Find the affinity symbol object
+        GameObject affinitySymbol = GameObject.Find("AffinitySymbol");
+        if (affinitySymbol == null)
+        {
+            Debug.LogWarning($"AffinitySymbol not found on prefab instance for card {card.name}");
+            return;
+        }
+
+        if (affinitySymbol.TryGetComponent(out UnityEngine.UI.Image affinitySymbolImage))
+        {
+            affinitySymbolImage.sprite = data.symbolSprite;
+        }
+        else
+        {
+            Debug.LogWarning($"AffinitySymbol has no Image component on card {card.name}");
         }
     }
 
