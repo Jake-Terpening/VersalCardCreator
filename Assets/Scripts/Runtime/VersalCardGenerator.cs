@@ -2,6 +2,7 @@ using UnityEngine;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 
 public class VersalCardGenerator
@@ -43,10 +44,9 @@ public class VersalCardGenerator
         foreach (var card in cardDataList)
         {
             GameObject prefab = (card.type.Equals("Unit", System.StringComparison.OrdinalIgnoreCase)) ? unitCardPrefab : spellCardPrefab;
-            string imagePath = Path.Combine(imageFolder, card.name + ".png");
+            string imagePath = Path.Combine(imageFolder, GetSafeFileName(card.name) + ".png");
             Sprite sprite = LoadSprite(imagePath);
-
-            RenderCardToPNG(prefab, card, sprite, Path.Combine(outputFolder, card.name + ".png"));
+            RenderCardToPNG(prefab, card, sprite, Path.Combine(outputFolder, GetSafeFileName(card.name) + ".png"));
         }
 
         Debug.Log("Individual cards generated successfully!");
@@ -89,7 +89,7 @@ public class VersalCardGenerator
 
             CardData card = cardDataList[i];
             GameObject prefab = (card.type.Equals("Unit", System.StringComparison.OrdinalIgnoreCase)) ? unitCardPrefab : spellCardPrefab;
-            Sprite sprite = LoadSprite(Path.Combine(imageFolder, card.name + ".png"));
+            Sprite sprite = LoadSprite(Path.Combine(imageFolder, GetSafeFileName(card.name) + ".png"));
             Texture2D cardTex = RenderCardTexture(prefab, card, sprite);
 
             PasteCardIntoSheet(sheet, cardTex, col, row, cardsPerColumn);
@@ -126,8 +126,8 @@ public class VersalCardGenerator
                 effect = cols[3],
                 attack = int.TryParse(cols[4], out int atk) ? atk : 0,
                 defense = int.TryParse(cols[5], out int def) ? def : 0,
-                subtype = cols[6],
-                condition = cols[7],
+                condition = cols[6],
+                subtype = cols[7],
                 affinity = cols[8],
                 rarity = int.TryParse(cols[9], out int r) ? r : 1, // default rarity 1 if missing
                 type = cols[10]
@@ -137,7 +137,16 @@ public class VersalCardGenerator
         }
     }
 
+    private string GetSafeFileName(string fileName)
+    {
+        string safeFileName = fileName.Replace(":", "");
+        return safeFileName;
+        var invalidChars = Path.GetInvalidFileNameChars();
 
+        return new string(fileName
+            .Where(ch => !invalidChars.Contains(ch))
+            .ToArray());
+    }
 
     private Sprite LoadSprite(string path)
     {
@@ -240,14 +249,15 @@ public class VersalCardGenerator
             return;
         }
 
-        if (affinityBack.TryGetComponent(out UnityEngine.UI.Image affinityBackImage))
+        //we don't actually change the affinity back drop color, but here is how we would do it if we did.
+        /*if (affinityBack.TryGetComponent(out UnityEngine.UI.Image affinityBackImage))
         {
             affinityBackImage.color = data.backdropColor;
         }
         else
         {
             Debug.LogWarning($"AffinityBack has no Image component on card {card.name}");
-        }
+        }*/
 
         // Find the affinity symbol object
         GameObject affinitySymbol = GameObject.Find("AffinitySymbol");
@@ -273,8 +283,6 @@ public class VersalCardGenerator
         TMPro.TextMeshProUGUI[] texts = instance.GetComponentsInChildren<TMPro.TextMeshProUGUI>();
         foreach (var t in texts)
         {
-            
-
             string lowerName = t.name.ToLower();
             string fieldText = "";
 
@@ -289,6 +297,7 @@ public class VersalCardGenerator
             else if (lowerName.Contains("spelltype") || lowerName.Contains("subtype"))
             {
                 string typeString = card.subtype;
+                Debug.Log($"{typeString}");
                 fieldText = string.IsNullOrEmpty(typeString) ? "?" : typeString[0].ToString();
             }
             else
